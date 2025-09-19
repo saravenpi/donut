@@ -20,6 +20,7 @@ const (
 	CreateTodoView
 	EditTodoView
 	HelpView
+	ConfirmDeleteProjectView
 )
 
 type Model struct {
@@ -95,6 +96,8 @@ func (m Model) handleKeypress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleEditTodoKeys(msg)
 	case HelpView:
 		return m.handleHelpViewKeys(msg)
+	case ConfirmDeleteProjectView:
+		return m.handleConfirmDeleteProjectKeys(msg)
 	}
 	return m, nil
 }
@@ -122,7 +125,7 @@ func (m Model) handleProjectViewKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.inputMode = true
 	case "d":
 		if len(m.data.Projects) > 0 {
-			m.deleteProject()
+			m.mode = ConfirmDeleteProjectView
 		}
 	case "?":
 		m.mode = HelpView
@@ -253,6 +256,19 @@ func (m Model) handleHelpViewKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) handleConfirmDeleteProjectKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "ctrl+c", "q":
+		return m, tea.Quit
+	case "esc", "n":
+		m.mode = ProjectView
+	case "y", "enter":
+		m.deleteProject()
+		m.mode = ProjectView
+	}
+	return m, nil
+}
+
 func (m Model) View() string {
 	switch m.mode {
 	case ProjectView:
@@ -267,6 +283,8 @@ func (m Model) View() string {
 		return m.renderEditTodoView()
 	case HelpView:
 		return m.renderHelpView()
+	case ConfirmDeleteProjectView:
+		return m.renderConfirmDeleteProjectView()
 	}
 	return ""
 }
@@ -420,6 +438,25 @@ Input Mode:
 	footer := "\nPress any key to return..."
 
 	return title + help + footer
+}
+
+func (m Model) renderConfirmDeleteProjectView() string {
+	currentProject := m.getCurrentProject()
+	if currentProject == nil {
+		return "No project selected"
+	}
+
+	title := titleStyle.Render("🍩 Delete Project")
+
+	warning := fmt.Sprintf("Are you sure you want to delete the project '%s'?", currentProject.Name)
+	todoCount := len(currentProject.Todos)
+	if todoCount > 0 {
+		warning += fmt.Sprintf("\nThis will permanently delete %d todo(s).", todoCount)
+	}
+
+	options := "\nPress 'y' or Enter to confirm, 'n' or Esc to cancel"
+
+	return title + "\n" + warning + options
 }
 
 func (m *Model) getCurrentProject() *models.Project {
