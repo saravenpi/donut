@@ -22,7 +22,7 @@ main() {
     local key=$(get_tmux_option "@donut-key" "$DEFAULT_KEY")
 
     # Bind the key to open donut in a popup
-    tmux bind-key "$key" display-popup -E -w 80% -h 80% -t "🍩 Donut" -d "#{pane_current_path}" \
+    tmux bind-key "$key" display-popup -E -w 80% -h 80% -t "Donut" -d "#{pane_current_path}" \
         'command -v donut >/dev/null 2>&1 && donut || echo "donut not found. Install with: curl -fsSL https://raw.githubusercontent.com/saravenpi/donut/main/install.sh | bash"'
 }
 
