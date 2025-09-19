@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -41,7 +42,10 @@ func Load() (*Config, error) {
 		config.DonutDir = defaultDonutDir
 	}
 
-	if !filepath.IsAbs(config.DonutDir) {
+	// Handle tilde expansion
+	if strings.HasPrefix(config.DonutDir, "~/") {
+		config.DonutDir = filepath.Join(homeDir, config.DonutDir[2:])
+	} else if !filepath.IsAbs(config.DonutDir) {
 		config.DonutDir = filepath.Join(homeDir, config.DonutDir)
 	}
 

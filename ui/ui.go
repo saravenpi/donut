@@ -47,11 +47,6 @@ func NewModel() (*Model, error) {
 		return nil, err
 	}
 
-	if len(data.Projects) == 0 {
-		defaultProject := models.NewProject("Personal")
-		data.Projects = append(data.Projects, defaultProject)
-		s.Save(data)
-	}
 
 	return &Model{
 		storage:       s,

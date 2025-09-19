@@ -49,11 +49,6 @@ func (s *Storage) Load() (*models.AppData, error) {
 		}
 	}
 
-	if len(data.Projects) == 0 {
-		defaultProject := models.NewProject("Personal")
-		data.Projects = append(data.Projects, defaultProject)
-		s.saveProject(&defaultProject)
-	}
 
 	return &data, nil
 }
