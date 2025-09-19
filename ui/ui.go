@@ -24,16 +24,19 @@ const (
 )
 
 type Model struct {
-	storage      *storage.Storage
-	data         *models.AppData
-	mode         ViewMode
-	projectCursor int
-	todoCursor   int
-	inputValue   string
-	inputMode    bool
-	message      string
-	width        int
-	height       int
+	storage        *storage.Storage
+	data           *models.AppData
+	mode           ViewMode
+	projectCursor  int
+	todoCursor     int
+	inputValue     string
+	inputMode      bool
+	message        string
+	width          int
+	height         int
+	expandedProjects map[int]bool
+	inExpandedTodo   bool
+	expandedTodoCursor int
 }
 
 func NewModel() (*Model, error) {
@@ -49,14 +52,17 @@ func NewModel() (*Model, error) {
 
 
 	return &Model{
-		storage:       s,
-		data:          data,
-		mode:          ProjectView,
-		projectCursor: 0,
-		todoCursor:    0,
-		inputValue:    "",
-		inputMode:     false,
-		message:       "",
+		storage:            s,
+		data:               data,
+		mode:               ProjectView,
+		projectCursor:      0,
+		todoCursor:         0,
+		inputValue:         "",
+		inputMode:          false,
+		message:            "",
+		expandedProjects:   make(map[int]bool),
+		inExpandedTodo:     false,
+		expandedTodoCursor: 0,
 	}, nil
 }
 
@@ -99,20 +105,54 @@ func (m Model) handleKeypress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) handleProjectViewKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "ctrl+c", "q":
+	case "ctrl+c", "q", "esc":
 		return m, tea.Quit
 	case "up", "k":
-		if m.projectCursor > 0 {
+		if m.inExpandedTodo {
+			if m.expandedTodoCursor > 0 {
+				m.expandedTodoCursor--
+			} else {
+				m.inExpandedTodo = false
+			}
+		} else if m.projectCursor > 0 {
 			m.projectCursor--
+			m.inExpandedTodo = false
+			m.expandedTodoCursor = 0
 		}
 	case "down", "j":
-		if m.projectCursor < len(m.data.Projects)-1 {
+		if m.inExpandedTodo {
+			currentProject := m.getCurrentProject()
+			if currentProject != nil && m.expandedTodoCursor < len(currentProject.Todos)-1 {
+				m.expandedTodoCursor++
+			}
+		} else if m.projectCursor < len(m.data.Projects)-1 {
 			m.projectCursor++
+			m.inExpandedTodo = false
+			m.expandedTodoCursor = 0
+		} else if m.expandedProjects[m.projectCursor] {
+			currentProject := m.getCurrentProject()
+			if currentProject != nil && len(currentProject.Todos) > 0 {
+				m.inExpandedTodo = true
+				m.expandedTodoCursor = 0
+			}
+		}
+	case "tab":
+		if len(m.data.Projects) > 0 {
+			m.expandedProjects[m.projectCursor] = !m.expandedProjects[m.projectCursor]
+			m.inExpandedTodo = false
+			m.expandedTodoCursor = 0
 		}
 	case "enter":
-		if len(m.data.Projects) > 0 {
+		if m.inExpandedTodo {
+			m.mode = TodoView
+			m.todoCursor = m.expandedTodoCursor
+		} else if len(m.data.Projects) > 0 {
 			m.mode = TodoView
 			m.todoCursor = 0
+		}
+	case " ":
+		if m.inExpandedTodo {
+			m.toggleExpandedTodo()
 		}
 	case "n":
 		m.mode = CreateProjectView
@@ -132,7 +172,7 @@ func (m Model) handleTodoViewKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "ctrl+c", "q":
 		return m, tea.Quit
-	case "backspace":
+	case "backspace", "esc":
 		m.mode = ProjectView
 	case "up", "k":
 		if m.todoCursor > 0 {
@@ -301,17 +341,21 @@ var (
 	inputStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FF6B6B")).
 			Bold(true)
+
+	mutedStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#888888"))
 )
 
 func (m Model) renderProjectView() string {
 	title := titleStyle.Render("🍩 Donut - Projects")
 
-	var projects []string
+	var lines []string
 	for i, project := range m.data.Projects {
 		cursor := " "
-		if i == m.projectCursor {
+		projectName := project.Name
+		if i == m.projectCursor && !m.inExpandedTodo {
 			cursor = ">"
-			project.Name = selectedStyle.Render(project.Name)
+			projectName = selectedStyle.Render(project.Name)
 		}
 		todoCount := len(project.Todos)
 		completedCount := 0
@@ -320,16 +364,45 @@ func (m Model) renderProjectView() string {
 				completedCount++
 			}
 		}
-		line := fmt.Sprintf("%s %s (%d/%d)", cursor, project.Name, completedCount, todoCount)
-		projects = append(projects, line)
+
+		expandIcon := "▶"
+		if m.expandedProjects[i] {
+			expandIcon = "▼"
+		}
+
+		projectLine := fmt.Sprintf("%s %s %s (%d/%d)", cursor, expandIcon, projectName, completedCount, todoCount)
+		lines = append(lines, projectLine)
+
+		// Show todos if expanded
+		if m.expandedProjects[i] {
+			for j, todo := range project.Todos {
+				todoCursor := " "
+				todoText := todo.Title
+				if i == m.projectCursor && m.inExpandedTodo && j == m.expandedTodoCursor {
+					todoCursor = ">"
+					if !todo.Completed {
+						todoText = selectedStyle.Render(todoText)
+					}
+				}
+
+				checkbox := "☐"
+				if todo.Completed {
+					checkbox = "☑"
+					todoText = completedStyle.Render(todoText)
+				}
+
+				todoLine := fmt.Sprintf("  %s %s %s", todoCursor, checkbox, todoText)
+				lines = append(lines, todoLine)
+			}
+		}
 	}
 
-	content := strings.Join(projects, "\n")
-	if len(projects) == 0 {
+	content := strings.Join(lines, "\n")
+	if len(m.data.Projects) == 0 {
 		content = "No projects yet. Press 'n' to create one!"
 	}
 
-	help := "\nControls: ↑/↓ or j/k (navigate), Enter (select), n (new), d (delete), ? (help), q (quit)"
+	help := mutedStyle.Render("\n\ntab (expand), n (new), d (delete), ? (help), q (quit)")
 
 	return title + "\n" + content + help
 }
@@ -369,7 +442,7 @@ func (m Model) renderTodoView() string {
 		content = "No todos yet. Press 'n' to create one!"
 	}
 
-	help := "\nControls: ↑/↓ or j/k (navigate), Space (toggle), n (new), e (edit), d (delete), Backspace (projects), ? (help), q (quit)"
+	help := mutedStyle.Render("\n\nn (new), d (delete), ? (help), q (quit)")
 
 	return title + "\n" + content + help
 }
@@ -511,6 +584,14 @@ func (m *Model) toggleTodo() {
 	currentProject := m.getCurrentProject()
 	if currentProject != nil && len(currentProject.Todos) > 0 && m.todoCursor < len(currentProject.Todos) {
 		currentProject.Todos[m.todoCursor].Completed = !currentProject.Todos[m.todoCursor].Completed
+		m.storage.Save(m.data)
+	}
+}
+
+func (m *Model) toggleExpandedTodo() {
+	currentProject := m.getCurrentProject()
+	if currentProject != nil && len(currentProject.Todos) > 0 && m.expandedTodoCursor < len(currentProject.Todos) {
+		currentProject.Todos[m.expandedTodoCursor].Completed = !currentProject.Todos[m.expandedTodoCursor].Completed
 		m.storage.Save(m.data)
 	}
 }
