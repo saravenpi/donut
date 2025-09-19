@@ -275,13 +275,7 @@ var (
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("#FF6B6B")).
-			Padding(1, 2)
-
-	boxStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#74C0FC")).
-			Padding(1, 2).
-			Margin(1)
+			MarginBottom(1)
 
 	selectedStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FF6B6B")).
@@ -292,9 +286,8 @@ var (
 			Strikethrough(true)
 
 	inputStyle = lipgloss.NewStyle().
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("#FF6B6B")).
-			Padding(0, 1)
+			Foreground(lipgloss.Color("#FF6B6B")).
+			Bold(true)
 )
 
 func (m Model) renderProjectView() string {
@@ -325,7 +318,7 @@ func (m Model) renderProjectView() string {
 
 	help := "\nControls: ↑/↓ or j/k (navigate), Enter (select), n (new), d (delete), ? (help), q (quit)"
 
-	return title + "\n" + boxStyle.Render(content) + help
+	return title + "\n" + content + help
 }
 
 func (m Model) renderTodoView() string {
@@ -365,7 +358,7 @@ func (m Model) renderTodoView() string {
 
 	help := "\nControls: ↑/↓ or j/k (navigate), Space (toggle), n (new), e (edit), d (delete), Backspace (projects), ? (help), q (quit)"
 
-	return title + "\n" + boxStyle.Render(content) + help
+	return title + "\n" + content + help
 }
 
 func (m Model) renderCreateProjectView() string {
@@ -426,7 +419,7 @@ Input Mode:
 
 	footer := "\nPress any key to return..."
 
-	return title + "\n" + boxStyle.Render(help) + footer
+	return title + help + footer
 }
 
 func (m *Model) getCurrentProject() *models.Project {
