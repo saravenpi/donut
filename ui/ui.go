@@ -347,7 +347,7 @@ var (
 )
 
 func (m Model) renderProjectView() string {
-	title := titleStyle.Render("🍩 Donut - Projects")
+	title := titleStyle.Render("Projects")
 
 	var lines []string
 	for i, project := range m.data.Projects {
@@ -413,7 +413,7 @@ func (m Model) renderTodoView() string {
 		return "No project selected"
 	}
 
-	title := titleStyle.Render(fmt.Sprintf("🍩 Donut - %s", currentProject.Name))
+	title := titleStyle.Render(currentProject.Name)
 
 	var todos []string
 	for i, todo := range currentProject.Todos {
@@ -448,7 +448,7 @@ func (m Model) renderTodoView() string {
 }
 
 func (m Model) renderCreateProjectView() string {
-	title := titleStyle.Render("🍩 Create New Project")
+	title := titleStyle.Render("Create New Project")
 	prompt := "Project name: "
 	input := inputStyle.Render(m.inputValue + "█")
 	help := "\nPress Enter to create, Esc to cancel"
@@ -457,7 +457,7 @@ func (m Model) renderCreateProjectView() string {
 }
 
 func (m Model) renderCreateTodoView() string {
-	title := titleStyle.Render("🍩 Create New Todo")
+	title := titleStyle.Render("Create New Todo")
 	prompt := "Todo title: "
 	input := inputStyle.Render(m.inputValue + "█")
 	help := "\nPress Enter to create, Esc to cancel"
@@ -466,7 +466,7 @@ func (m Model) renderCreateTodoView() string {
 }
 
 func (m Model) renderEditTodoView() string {
-	title := titleStyle.Render("🍩 Edit Todo")
+	title := titleStyle.Render("Edit Todo")
 	prompt := "Todo title: "
 	input := inputStyle.Render(m.inputValue + "█")
 	help := "\nPress Enter to save, Esc to cancel"
@@ -475,7 +475,7 @@ func (m Model) renderEditTodoView() string {
 }
 
 func (m Model) renderHelpView() string {
-	title := titleStyle.Render("🍩 Donut - Help")
+	title := titleStyle.Render("Help")
 
 	help := `
 Project View:
@@ -516,7 +516,7 @@ func (m Model) renderConfirmDeleteProjectView() string {
 		return "No project selected"
 	}
 
-	title := titleStyle.Render("🍩 Delete Project")
+	title := titleStyle.Render("Delete Project")
 
 	warning := fmt.Sprintf("Are you sure you want to delete the project '%s'?", currentProject.Name)
 	todoCount := len(currentProject.Todos)
