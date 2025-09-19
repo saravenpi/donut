@@ -479,12 +479,14 @@ func (m Model) renderHelpView() string {
 
 	help := `
 Project View:
-  ↑/↓, j/k    Navigate projects
-  Enter       Select project
+  ↑/↓, j/k    Navigate projects/tasks
+  Tab         Expand/collapse project
+  Space       Toggle task (when expanded)
+  Enter       Open project or select task
   n           Create new project
   d           Delete project
   ?           Show/hide help
-  q, Ctrl+C   Quit
+  q, Ctrl+C, Esc  Quit
 
 Todo View:
   ↑/↓, j/k    Navigate todos
@@ -492,7 +494,7 @@ Todo View:
   n           Create new todo
   e           Edit todo
   d           Delete todo
-  Backspace   Return to projects
+  Backspace, Esc  Return to projects
   ?           Show/hide help
   q, Ctrl+C   Quit
 

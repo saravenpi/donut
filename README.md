@@ -7,8 +7,10 @@ A simple, keyboard-controlled todolist TUI application with tmux plugin integrat
 - 📝 **Project-based todos**: Organize your tasks into different projects
 - ⌨️ **Fully keyboard controlled**: Navigate without touching your mouse
 - 🎨 **Beautiful TUI**: Built with Charm Bracelet's Bubbletea
+- 📂 **Expandable projects**: View tasks inline with tab to expand/collapse
 - 🔧 **Tmux integration**: Floating popup access via tmux plugin
 - 💾 **Persistent storage**: Your todos are saved locally
+- ⚙️ **Configurable**: Custom storage paths via ~/.donut.yml
 
 ## Quick Install
 
@@ -61,27 +63,47 @@ Then install with TPM: `prefix + I`
 
 Use the default keybinding `prefix + d` to open donut in a floating popup.
 
+## Configuration
+
+Donut can be configured via `~/.donut.yml`:
+
+```yaml
+donut_dir: "~/Library/Mobile Documents/iCloud~md~obsidian/Documents/brain/todo/"
+```
+
+### Configuration Options
+
+- `donut_dir` - Directory where project files are stored (supports tilde expansion)
+
+If no config file exists, donut defaults to storing files in `~/.donut/`.
+
 ## Keyboard Controls
 
-### Global
-- `q` or `Ctrl+C` - Quit application
-- `Tab` / `Shift+Tab` - Navigate between panels
-- `?` - Show help
-
 ### Project View
-- `↑/↓` or `j/k` - Navigate projects
-- `Enter` - Select project
-- `n` - New project
+- `↑/↓` or `j/k` - Navigate projects and expanded tasks
+- `Tab` - Expand/collapse project to show tasks inline
+- `Space` - Toggle task completion (when on expanded task)
+- `Enter` - Open project view or select specific task
+- `n` - Create new project
 - `d` - Delete project
-- `r` - Rename project
+- `?` - Show help
+- `q`, `Ctrl+C`, or `Esc` - Quit application
 
 ### Todo View
 - `↑/↓` or `j/k` - Navigate todos
 - `Space` - Toggle todo completion
-- `n` - New todo
-- `d` - Delete todo
+- `n` - Create new todo
 - `e` - Edit todo
-- `Backspace` - Return to projects
+- `d` - Delete todo
+- `Backspace` or `Esc` - Return to projects
+- `?` - Show help
+- `q` or `Ctrl+C` - Quit application
+
+### Input Mode (Create/Edit)
+- `Type` - Enter text
+- `Enter` - Confirm
+- `Esc` - Cancel
+- `Backspace` - Delete character
 
 ## Development
 
