@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -11,6 +12,7 @@ type Todo struct {
 	Title     string
 	Completed bool
 	LineNum   int
+	CreatedAt time.Time
 }
 
 type Project struct {
@@ -29,6 +31,7 @@ func NewTodo(title string) Todo {
 		Title:     title,
 		Completed: false,
 		LineNum:   -1,
+		CreatedAt: time.Now(),
 	}
 }
 
@@ -70,4 +73,21 @@ func generateFilename(name string) string {
 
 func (p *Project) GetFilePath(donutDir string) string {
 	return filepath.Join(donutDir, p.Filename)
+}
+
+// SortTodos sorts todos with completed tasks at the bottom (muted)
+// and within each group, sorts by creation date (latest first)
+func (p *Project) SortTodos() {
+	sort.SliceStable(p.Todos, func(i, j int) bool {
+		todoI := &p.Todos[i]
+		todoJ := &p.Todos[j]
+
+		// If completion status differs, incomplete tasks come first
+		if todoI.Completed != todoJ.Completed {
+			return !todoI.Completed
+		}
+
+		// Within the same completion status, sort by creation date (latest first)
+		return todoI.CreatedAt.After(todoJ.CreatedAt)
+	})
 }

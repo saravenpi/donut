@@ -335,7 +335,7 @@ var (
 			Bold(true)
 
 	completedStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#51CF66")).
+			Foreground(lipgloss.Color("#666666")).
 			Strikethrough(true)
 
 	inputStyle = lipgloss.NewStyle().
@@ -375,6 +375,8 @@ func (m Model) renderProjectView() string {
 
 		// Show todos if expanded
 		if m.expandedProjects[i] {
+			// Sort todos before displaying
+			project.SortTodos()
 			for j, todo := range project.Todos {
 				todoCursor := " "
 				todoText := todo.Title
@@ -414,6 +416,9 @@ func (m Model) renderTodoView() string {
 	}
 
 	title := titleStyle.Render(currentProject.Name)
+
+	// Sort todos before displaying
+	currentProject.SortTodos()
 
 	var todos []string
 	for i, todo := range currentProject.Todos {
