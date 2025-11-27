@@ -1,16 +1,15 @@
-# Donut - Simple todolist TUI application
+# Donut - Simple todolist TUI application (Rust)
 BINARY_NAME=donut
 VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
-LDFLAGS=-ldflags "-X main.version=$(VERSION)"
 
 # Build directory
 BUILD_DIR=build
 DIST_DIR=dist
 
 # Platforms for cross-compilation
-PLATFORMS=linux_amd64 linux_arm64 darwin_amd64 darwin_arm64
+TARGETS=x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu x86_64-apple-darwin aarch64-apple-darwin
 
-.PHONY: all build clean test install uninstall release help
+.PHONY: all build clean test install uninstall release help build-all
 
 # Default target
 all: build
@@ -19,27 +18,29 @@ all: build
 build:
 	@echo "Building $(BINARY_NAME) v$(VERSION)..."
 	@mkdir -p $(BUILD_DIR)
-	go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) .
+	cargo build --release
+	@cp target/release/$(BINARY_NAME) $(BUILD_DIR)/$(BINARY_NAME)
 
 # Build for all platforms
 build-all: clean
 	@echo "Building $(BINARY_NAME) v$(VERSION) for all platforms..."
 	@mkdir -p $(DIST_DIR)
-	@for platform in $(PLATFORMS); do \
-		os=$$(echo $$platform | cut -d'_' -f1); \
-		arch=$$(echo $$platform | cut -d'_' -f2); \
-		echo "Building for $$os/$$arch..."; \
-		mkdir -p $(DIST_DIR)/$$platform; \
-		GOOS=$$os GOARCH=$$arch go build $(LDFLAGS) -o $(DIST_DIR)/$$platform/$(BINARY_NAME) .; \
-		tar -czf $(DIST_DIR)/$(BINARY_NAME)_$$platform.tar.gz -C $(DIST_DIR)/$$platform $(BINARY_NAME); \
-		rm -rf $(DIST_DIR)/$$platform; \
+	@for target in $(TARGETS); do \
+		echo "Building for $$target..."; \
+		cargo build --release --target $$target || echo "Failed to build for $$target (target may not be installed)"; \
+		if [ -f target/$$target/release/$(BINARY_NAME) ]; then \
+			mkdir -p $(DIST_DIR)/$$target; \
+			cp target/$$target/release/$(BINARY_NAME) $(DIST_DIR)/$$target/; \
+			tar -czf $(DIST_DIR)/$(BINARY_NAME)_$$target.tar.gz -C $(DIST_DIR)/$$target $(BINARY_NAME); \
+			rm -rf $(DIST_DIR)/$$target; \
+		fi; \
 	done
 	@echo "All builds completed in $(DIST_DIR)/"
 
 # Run tests
 test:
 	@echo "Running tests..."
-	go test ./...
+	cargo test
 
 # Install to ~/.local/bin
 install: build
@@ -60,6 +61,7 @@ uninstall:
 clean:
 	@echo "Cleaning build artifacts..."
 	@rm -rf $(BUILD_DIR) $(DIST_DIR)
+	@cargo clean
 
 # Create release (requires gh CLI)
 release: build-all
