@@ -550,6 +550,8 @@ func (m *Model) createProject() {
 
 func (m *Model) deleteProject() {
 	if len(m.data.Projects) > 0 && m.projectCursor < len(m.data.Projects) {
+		project := m.data.Projects[m.projectCursor]
+		m.storage.DeleteProject(&project)
 		m.data.Projects = append(m.data.Projects[:m.projectCursor], m.data.Projects[m.projectCursor+1:]...)
 		if m.projectCursor >= len(m.data.Projects) && len(m.data.Projects) > 0 {
 			m.projectCursor = len(m.data.Projects) - 1
