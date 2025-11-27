@@ -204,6 +204,10 @@ impl App {
                     let project = Project::new(self.input.clone(), filename);
                     let _ = self.storage.save_project(&project);
                     self.data.projects.push(project);
+                    self.cursor = self.data.projects.len().saturating_sub(1);
+                    self.view_mode = ViewMode::ProjectView;
+                    self.input.clear();
+                } else {
                     self.view_mode = ViewMode::ProjectView;
                     self.input.clear();
                 }
@@ -231,9 +235,13 @@ impl App {
                         project.todos.push(todo);
                         project.sort_todos();
                         let _ = self.storage.save_project(project);
+                        self.cursor = 0;
                         self.view_mode = ViewMode::TodoView;
                         self.input.clear();
                     }
+                } else {
+                    self.view_mode = ViewMode::TodoView;
+                    self.input.clear();
                 }
             }
             KeyCode::Esc => {
@@ -259,15 +267,21 @@ impl App {
                             if idx < project.todos.len() {
                                 project.todos[idx].title = self.input.clone();
                                 let _ = self.storage.save_project(project);
+                                self.cursor = idx;
                             }
                         }
                     }
+                } else if let Some(idx) = self.edit_index {
+                    self.cursor = idx;
                 }
                 self.view_mode = ViewMode::TodoView;
                 self.input.clear();
                 self.edit_index = None;
             }
             KeyCode::Esc => {
+                if let Some(idx) = self.edit_index {
+                    self.cursor = idx;
+                }
                 self.view_mode = ViewMode::TodoView;
                 self.input.clear();
                 self.edit_index = None;
@@ -373,6 +387,11 @@ impl App {
                 .map(|(i, project)| {
                     let is_selected = i == self.cursor;
                     let cursor = if is_selected { "▸ " } else { "  " };
+                    let checkbox = if project.completed_count() == project.total_count() && project.total_count() > 0 {
+                        "✓ "
+                    } else {
+                        "○ "
+                    };
                     let counter = format!(" {}/{}", project.completed_count(), project.total_count());
 
                     let style = if is_selected {
@@ -385,6 +404,7 @@ impl App {
 
                     ListItem::new(Line::from(vec![
                         Span::styled(cursor, style),
+                        Span::styled(checkbox, style),
                         Span::styled(&project.name, style),
                         Span::styled(counter, Style::default().fg(DIM_COLOR)),
                     ]))
@@ -412,7 +432,7 @@ impl App {
                     .todos
                     .iter()
                     .map(|todo| {
-                        let checkbox = if todo.completed { "" } else { "" };
+                        let checkbox = if todo.completed { "✓" } else { "○" };
                         let style = if todo.completed {
                             Style::default()
                                 .fg(SUCCESS_COLOR)
@@ -503,7 +523,7 @@ impl App {
                 .map(|(i, todo)| {
                     let is_selected = i == self.cursor;
                     let cursor = if is_selected { "▸ " } else { "  " };
-                    let checkbox = if todo.completed { "" } else { "" };
+                    let checkbox = if todo.completed { "✓" } else { "○" };
 
                     let style = if todo.completed {
                         Style::default()
